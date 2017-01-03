@@ -1,0 +1,4 @@
+cron:
+ - description: test every 2 minutes
+   url: /urlcheck?url=http://hub.urbanopus.net
+   schedule: every 2 minutes synchronized
