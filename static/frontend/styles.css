@@ -4,6 +4,9 @@ h1 {
   font-size: 250%;
 }
 
+#container {
+  margin-top: 20px;
+}
 .list-group { 
     margin: 0; 
     max-width: 500px;
@@ -11,8 +14,19 @@ h1 {
     margin: 0 auto;
  }
 
+.url-form { 
+  margin: 0; 
+  max-width: 500px;
+  width: 100%;
+  margin: 0 auto;
+}
+
 .url {
   margin-left: 20px;
+}
+
+#url {
+  margin-bottom: 5px;
 }
 
 .status {
