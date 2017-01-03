@@ -1,46 +1,82 @@
 import logging
 import urllib2
 
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 from google.appengine.api import users
 from google.appengine.api import mail
 from google.appengine.ext import ndb
 
 app = Flask(__name__)
 
-class Host(ndb.Model):
-  name = ndb.StringProperty()
+class Url(ndb.Model):
+  status = ndb.StringProperty()
   url = ndb.StringProperty()
 
+  @classmethod
+  def get_by_url(cls, url):
+    return cls.query().filter(cls.url == url).get()
 
-@app.route('/host/<hostName>', methods=['DELETE', 'GET'])
-def processHostDelete(hostName):
-  if request.method == 'DELETE':
-    return 'ok'
-  elif request.method == 'GET':
-    h = ndb.Key('Host', hostName).get()
-    if h:
-      res = h.url
-    else:
-      res = 'not found'
-    return res
+class UrlBackend():
+  def getUrls(self):
+    urls = Url.query().fetch()
+    return [{"url": u.url, "status": u.status} for u in urls]
 
-@app.route('/host', methods=['POST'])
-def processHost():
-  name = request.json['name']
-  url = request.json['url']
+  def addUrl(self,u):
+    url = Url(status='unknown', url=u, id=u)
+    url.put()
+    return {"added_url": url.url}
 
-  if not name or not url:
-    return 'name and url must be present', 400
+  def delUrl(self,u):
+    url = Url.get_by_url(u)
+    if url is not None:
+      url.key.delete()
+    return {"deleted_url": u}
 
-  host = Host(name=name, url=url, id=name)
-  host.put()
-  return 'ok'
+urlBackend = UrlBackend()
+
+
+@app.route('/api/urls', methods=['GET'])
+def getUrls():
+  res = urlBackend.getUrls()
+  return jsonify(res)
+
+@app.route('/api/url', methods=['POST'])
+def postUrl():
+  url = request.json['u']
+  if not url:
+      return 'url must be present', 400
+
+  res = urlBackend.addUrl(url)
+  return jsonify(res)
+
+@app.route('/api/url/<url>', methods=['DELETE'])
+def deleteUrl(url):
+  if not url:
+      return 'url must be present', 400
+
+  url = url.replace(':','%3A')
+  res = urlBackend.delUrl(url)
+  return jsonify(res)
 
 @app.route('/cron')
 def cron():
-  query = Host.query()
-  print(query.fetch())
+  urls = urlBackend.getUrls()
+  for url in urls:
+    storedUrl = Url.get_by_url(url['url'])
+    urlStr = urllib2.unquote(url['url']).decode('utf8')
+    try:
+      res = urllib2.urlopen(urlStr, timeout = 10)
+      assert res.getcode() == 200
+      storedUrl.status = 'ok'
+    except Exception as err:
+      if storedUrl.status != 'failed':
+        storedUrl.status = 'failed'
+        mail.send_mail(
+          sender="giangnam.bkdtvt@gmail.com",
+          to="Nam Giang <giangnam.bkdtvt@gmail.com>",
+          subject="Server down: {}".format(urlStr),
+          body="{} is down!".format(urlStr))
+    storedUrl.put()
   return 'ok'
 
 @app.route('/urlcheck')
@@ -73,28 +109,10 @@ def admin():
     'test.html',
     greeting=greeting, urls = Host.query().fetch())
 
-@app.route('/form')
-def form():
-  return render_template('form.html')
-
-@app.route('/submitted', methods=['POST'])
-def submitted_form():
-  name = request.form['name']
-  email = request.form['email']
-  site = request.form['site_url']
-  comments = request.form['comments']
-  return render_template(
-    'submitted_form.html',
-    name=name,
-    email=email,
-    site=site,
-    comments=comments)
-
 @app.route('/')
 def hello():
   return render_template(
     'index.html')
-
 
 @app.errorhandler(500)
 def server_error(e):
