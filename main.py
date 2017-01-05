@@ -5,38 +5,9 @@ from flask import Flask, render_template, request, jsonify
 from google.appengine.api import users
 from google.appengine.api import mail
 
-
 from backend import Backend, BackendResult
 
 app = Flask(__name__)
-
-# class Url(ndb.Model):
-#   status = ndb.StringProperty()
-#   url = ndb.StringProperty()
-
-#   @classmethod
-#   def get_by_url(cls, url):
-#     return cls.query().filter(cls.url == url).get()
-
-# class UrlBackend():
-#   def getUrls(self):
-#     urls = Url.query().fetch()
-#     return [u.to_dict() for u in urls]
-
-#   def addUrl(self,u):
-#     url = Url(status=u['status'], url=u['url'])
-#     url.put()
-#     newUrl = url.to_dict()
-#     newUrl['id'] = url.key.id()
-#     return newUrl
-
-#   def delUrl(self,uid):
-#     url = Url.get_by_id(uid)
-#     if url is None:
-#       return {'error': 'key not found'}
-
-#     url.key.delete()
-#     return url.to_dict()
 
 urlBackend = Backend()
 
@@ -88,25 +59,10 @@ def cron():
         mail.send_mail(
           sender="giangnam.bkdtvt@gmail.com",
           to="Nam Giang <giangnam.bkdtvt@gmail.com>",
-          subject="Server down: {}".format(urlStr),
-          body="{} is down!".format(urlStr))
-    urlBackend.update(url)
+          subject="Server down!",
+          body="{} is down!".format(url['url']))
+    urlBackend.updateUrl(url)
   return 'ok'
-
-# @app.route('/urlcheck')
-# def urlcheck():
-#   url = request.args.get('url')
-#   try:
-#     res = urllib2.urlopen(url, timeout = 10)
-#     assert res.getcode() == 200
-#     return 'ok'
-#   except Exception as err:
-#     mail.send_mail(
-#       sender="giangnam.bkdtvt@gmail.com",
-#       to="Nam Giang <giangnam.bkdtvt@gmail.com>",
-#       subject="Server down: {}".format(url),
-#       body="{} is down!".format(url))
-#     return "error: {0}".format(err)
 
 @app.route('/admin')
 def admin():
@@ -122,11 +78,6 @@ def admin():
   return render_template(
     'admin.html',
     greeting=greeting)
-
-# @app.route('/')
-# def hello():
-#   return render_template(
-#     'index.html')
 
 @app.errorhandler(500)
 def server_error(e):
