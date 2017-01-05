@@ -3,6 +3,7 @@ import { Url } from '../models/url';
 import { UrlService } from '../services/url.service';
 import { Observable }       from 'rxjs/Observable';
 
+import '../../../public/css/styles.css';
 import '../rxjs-operators';
 
 @Component({
@@ -24,16 +25,7 @@ import '../rxjs-operators';
 
 export class AppComponent implements OnInit { 
   errorMessage: string;
-  urls = [
-    {
-      url: 'http://hub.urbanopus.test', 
-      status: 'ok'
-    },
-    {
-      url: 'http://hub.urbanopus.test2', 
-      status: 'failed'
-    }
-  ]; 
+  urls : Url[]; 
   items: Observable<string[]>;
   mode = 'Observable';
 
@@ -45,18 +37,15 @@ export class AppComponent implements OnInit {
   }
 
   delUrl(url: Url) : void {
-    let toBeDelete : number
     let me = this
 
     for (let i = 0; i < this.urls.length; i++){
-      if (this.urls[i].url === url.url){
-        toBeDelete = i
-
-        let encodedUrl = encodeURIComponent(url.url)
+      if (this.urls[i].id === url.id){
+        // let encodedUrl = encodeURIComponent(url.url)
         this.urlService
-        .delUrl(encodedUrl)
+        .delUrl(url.id)
         .subscribe(
-          res  => me.urls.splice(toBeDelete, 1),
+          res  => me.urls.splice(i, 1),
           error =>  this.errorMessage = <any>error);
         break
       }
@@ -68,10 +57,7 @@ export class AppComponent implements OnInit {
     .getUrls()
     .subscribe(
       urls => {
-        this.urls = []
-        for (let u of urls){
-          this.urls.push({url: decodeURIComponent(u.url), status: u.status})
-        }
+        this.urls = urls
       },
       error =>  this.errorMessage = <any>error);
   }

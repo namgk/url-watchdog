@@ -39,15 +39,11 @@ export class UrlFormComponent  {
       }
     }
     
-    let encodedUrl = encodeURIComponent(u)
     let me = this
-
     this.urlService
-    .addUrl(encodedUrl)
+    .addUrl(new Url(u))
     .subscribe(
-      res  => {
-        let url =  new Url();
-        url.setUrl(u)
+      url => {
         me.urls.push(url)
       },
       error =>  console.log(error)

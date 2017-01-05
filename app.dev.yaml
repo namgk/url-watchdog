@@ -2,7 +2,7 @@ runtime: python27
 api_version: 1
 threadsafe: true
 skip_files:
-- frontend
+- static/frontend
 - \.gitignore
 - ^\.git/.*
 - ^(.*/)?.*\.map$
@@ -26,10 +26,10 @@ handlers:
   auth_fail_action: redirect
 
 - url: /static
-  static_dir: static
+  static_dir: frontend/src/app
 - url: /
-  static_files: static/index.html
-  upload: static/index.html
+  static_files: frontend/src/index.html
+  upload: frontend/src/index.html
   login: admin
   auth_fail_action: redirect
 # - url: /.*

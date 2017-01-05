@@ -4,6 +4,8 @@ import { Http, Response, Headers, RequestOptions } from '@angular/http';
 import { Url }           from '../models/url';
 import { Observable }     from 'rxjs/Observable';
 
+import assert = require('assert');
+
 @Injectable()
 export class UrlService {
   private urlResource = '/api/url';  // URL to web API
@@ -17,20 +19,20 @@ export class UrlService {
                     .catch(this.handleError);
   }
 
-  addUrl (encodedUrl: string): Observable<Url> {
+  addUrl (url: Url): Observable<Url> {
     let headers = new Headers({ 'Content-Type': 'application/json' });
     let options = new RequestOptions({ headers: headers });
 
-    return this.http.post(this.urlResource, { u:encodedUrl }, options)
+    return this.http.post(this.urlResource, url, options)
                     .map(this.extractData)
                     .catch(this.handleError);
   }
 
-  delUrl (encodedUrl: string): Observable<Url> {
+  delUrl (uid: string): Observable<Url> {
     let headers = new Headers({ 'Content-Type': 'application/json' });
     let options = new RequestOptions({ headers: headers });
 
-    return this.http.delete(this.urlResource + '/' + encodedUrl, options)
+    return this.http.delete(this.urlResource + '/' + uid, options)
                     .map(this.extractData)
                     .catch(this.handleError);
   }

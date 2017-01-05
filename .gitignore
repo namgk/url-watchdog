@@ -1,4 +1,5 @@
 lib/
+static/
 *.pyc
 **/node_modules/
 **/.idea
@@ -11,3 +12,4 @@ lib/
 **/e2e/**/*.js.map
 **/_test-output
 **/_temp
+

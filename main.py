@@ -4,95 +4,109 @@ import urllib2
 from flask import Flask, render_template, request, jsonify
 from google.appengine.api import users
 from google.appengine.api import mail
-from google.appengine.ext import ndb
+
+
+from backend import Backend, BackendResult
 
 app = Flask(__name__)
 
-class Url(ndb.Model):
-  status = ndb.StringProperty()
-  url = ndb.StringProperty()
+# class Url(ndb.Model):
+#   status = ndb.StringProperty()
+#   url = ndb.StringProperty()
 
-  @classmethod
-  def get_by_url(cls, url):
-    return cls.query().filter(cls.url == url).get()
+#   @classmethod
+#   def get_by_url(cls, url):
+#     return cls.query().filter(cls.url == url).get()
 
-class UrlBackend():
-  def getUrls(self):
-    urls = Url.query().fetch()
-    return [{"url": u.url, "status": u.status} for u in urls]
+# class UrlBackend():
+#   def getUrls(self):
+#     urls = Url.query().fetch()
+#     return [u.to_dict() for u in urls]
 
-  def addUrl(self,u):
-    url = Url(status='unknown', url=u, id=u)
-    url.put()
-    return {"added_url": url.url}
+#   def addUrl(self,u):
+#     url = Url(status=u['status'], url=u['url'])
+#     url.put()
+#     newUrl = url.to_dict()
+#     newUrl['id'] = url.key.id()
+#     return newUrl
 
-  def delUrl(self,u):
-    url = Url.get_by_url(u)
-    if url is not None:
-      url.key.delete()
-    return {"deleted_url": u}
+#   def delUrl(self,uid):
+#     url = Url.get_by_id(uid)
+#     if url is None:
+#       return {'error': 'key not found'}
 
-urlBackend = UrlBackend()
+#     url.key.delete()
+#     return url.to_dict()
 
+urlBackend = Backend()
 
 @app.route('/api/urls', methods=['GET'])
 def getUrls():
   res = urlBackend.getUrls()
-  return jsonify(res)
+  if res.ok:
+    return jsonify(res.result)
+  else:
+    return res.result, 400
 
 @app.route('/api/url', methods=['POST'])
-def postUrl():
-  url = request.json['u']
+def addUrl():
+  url = request.json
   if not url:
       return 'url must be present', 400
 
   res = urlBackend.addUrl(url)
-  return jsonify(res)
+  if res.ok:
+    return jsonify(res.result)
+  else:
+    return res.result, 400
 
-@app.route('/api/url/<url>', methods=['DELETE'])
-def deleteUrl(url):
-  if not url:
-      return 'url must be present', 400
+@app.route('/api/url/<uid>', methods=['DELETE'])
+def deleteUrl(uid):
+  if not uid:
+      return 'url id must be present', 400
 
-  url = url.replace(':','%3A')
-  res = urlBackend.delUrl(url)
-  return jsonify(res)
+  res = urlBackend.deleteUrl(long(uid))
+  if res.ok:
+    return jsonify(res.result)
+  else:
+    return res.result, 400
 
 @app.route('/cron')
 def cron():
-  urls = urlBackend.getUrls()
-  for url in urls:
-    storedUrl = Url.get_by_url(url['url'])
-    urlStr = urllib2.unquote(url['url']).decode('utf8')
+  res = urlBackend.getUrls()
+  if not res.ok:
+    return 'error fetching data', 400
+
+  for url in res.result:
     try:
-      res = urllib2.urlopen(urlStr, timeout = 10)
+      res = urllib2.urlopen(url['url'], timeout = 10)
       assert res.getcode() == 200
-      storedUrl.status = 'ok'
+      url['status'] = 'ok'
     except Exception as err:
-      if storedUrl.status != 'failed':
-        storedUrl.status = 'failed'
+      if url['status'] != 'failed':
+        url['status'] = 'failed'
         mail.send_mail(
           sender="giangnam.bkdtvt@gmail.com",
           to="Nam Giang <giangnam.bkdtvt@gmail.com>",
           subject="Server down: {}".format(urlStr),
           body="{} is down!".format(urlStr))
-    storedUrl.put()
+    urlBackend.update(url)
   return 'ok'
 
-@app.route('/urlcheck')
-def urlcheck():
-  url = request.args.get('url')
-  try:
-    res = urllib2.urlopen(url, timeout = 10)
-    assert res.getcode() == 200
-    return 'ok'
-  except Exception as err:
-    mail.send_mail(
-      sender="giangnam.bkdtvt@gmail.com",
-      to="Nam Giang <giangnam.bkdtvt@gmail.com>",
-      subject="Server down: {}".format(url),
-      body="{} is down!".format(url))
-    return "error: {0}".format(err)
+# @app.route('/urlcheck')
+# def urlcheck():
+#   url = request.args.get('url')
+#   try:
+#     res = urllib2.urlopen(url, timeout = 10)
+#     assert res.getcode() == 200
+#     return 'ok'
+#   except Exception as err:
+#     mail.send_mail(
+#       sender="giangnam.bkdtvt@gmail.com",
+#       to="Nam Giang <giangnam.bkdtvt@gmail.com>",
+#       subject="Server down: {}".format(url),
+#       body="{} is down!".format(url))
+#     return "error: {0}".format(err)
 
 @app.route('/admin')
 def admin():
@@ -106,13 +120,13 @@ def admin():
     login_url = users.create_login_url('/')
     greeting = 'Please sign in! (<a href="{}">sign in</a>)'.format(login_url)
   return render_template(
-    'test.html',
-    greeting=greeting, urls = Host.query().fetch())
+    'admin.html',
+    greeting=greeting)
 
-@app.route('/')
-def hello():
-  return render_template(
-    'index.html')
+# @app.route('/')
+# def hello():
+#   return render_template(
+#     'index.html')
 
 @app.errorhandler(500)
 def server_error(e):
