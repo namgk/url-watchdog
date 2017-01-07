@@ -50,18 +50,25 @@ def cron():
 
   for url in res.result:
     try:
-      res = urllib2.urlopen(url['url'], timeout = 10)
+      res = urllib2.urlopen(url['url'], timeout = 20)
       assert res.getcode() == 200
-      url['status'] = 'ok'
+      if url['status'] != 'ok':
+        url['status'] = 'ok'
+        urlBackend.updateUrl(url)
+        mail.send_mail(
+          sender="giangnam.bkdtvt@gmail.com",
+          to="Nam Giang <giangnam.bkdtvt@gmail.com>",
+          subject="{} back online".format(url['url']),
+          body="{} is now good!".format(url['url']))
     except Exception as err:
       if url['status'] != 'failed':
         url['status'] = 'failed'
+        urlBackend.updateUrl(url)
         mail.send_mail(
           sender="giangnam.bkdtvt@gmail.com",
           to="Nam Giang <giangnam.bkdtvt@gmail.com>",
           subject="Server down!",
           body="{} is down!".format(url['url']))
-    urlBackend.updateUrl(url)
   return 'ok'
 
 @app.route('/admin')
