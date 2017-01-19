@@ -44,31 +44,35 @@ def deleteUrl(uid):
 
 @app.route('/cron')
 def cron():
-  res = urlBackend.getUrls()
-  if not res.ok:
+  urls = urlBackend.getUrls()
+  if not urls.ok:
     return 'error fetching data', 400
 
-  for url in res.result:
+  for url in urls.result:
+    if 'attempt' not in url:
+      url['attempt'] = 0
+    if url['attempt'] is None:
+      url['attempt'] = 0
+    # is Python so complex???
+
     try:
-      res = urllib2.urlopen(url['url'], timeout = 20)
+      res = urllib2.urlopen(url['url'], timeout = 5)
       assert res.getcode() == 200
       if url['status'] != 'ok':
         url['status'] = 'ok'
+        url['attempt'] = 0
         urlBackend.updateUrl(url)
-        mail.send_mail(
-          sender="giangnam.bkdtvt@gmail.com",
-          to="Nam Giang <giangnam.bkdtvt@gmail.com>",
-          subject="{} back online".format(url['url']),
-          body="{} is now good!".format(url['url']))
     except Exception as err:
-      if url['status'] != 'failed':
+      url['attempt'] = url['attempt'] + 1
+
+      if url['attempt'] >= 3 and url['status'] != 'failed':
         url['status'] = 'failed'
-        urlBackend.updateUrl(url)
-        mail.send_mail(
-          sender="giangnam.bkdtvt@gmail.com",
-          to="Nam Giang <giangnam.bkdtvt@gmail.com>",
-          subject="Server down!",
-          body="{} is down!".format(url['url']))
+        mail.AdminEmailMessage(
+          sender='giangnam.bkdtvt@gmail.com',
+          subject="Server down! {}".format(url['url']),
+          body="{}".format(err)).Send()
+      urlBackend.updateUrl(url)
+
   return 'ok'
 
 @app.route('/admin')

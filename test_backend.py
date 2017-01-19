@@ -24,6 +24,7 @@ class TestBackend(unittest.TestCase):
   def test_add(self):
     res = self.backend.addUrl({'url':'http://aaaa'})
     self.assertTrue(res.ok)
+    self.assertTrue(res.result['attempt'] == 0)
     self.assertTrue(res.result['status'] == 'unknown')
 
   def test_update(self):

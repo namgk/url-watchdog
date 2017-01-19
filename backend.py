@@ -12,7 +12,7 @@ class Backend():
     return BackendResult(True, map(to_dict, Url.query().fetch()))
 
   def addUrl(self,u):
-    url = Url(status='unknown', url=u['url'])
+    url = Url(status='unknown', url=u['url'], attempt=0)
     url.put()
 
     return BackendResult(True, to_dict(url))
@@ -22,11 +22,7 @@ class Backend():
     if url is None:
       return BackendResult(False,'key not found')
 
-    if 'status' in u:
-      url.status = u['status']
-    if 'url' in u:
-      url.url = u['url']
-      
+    url.sync(u)
     url.put()
 
     return BackendResult(True, to_dict(url))

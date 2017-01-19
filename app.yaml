@@ -3,9 +3,11 @@ api_version: 1
 threadsafe: true
 skip_files:
 - frontend
+- \.git
 - \.gitignore
-- ^\.git/.*
+- test_*
 - ^(.*/)?.*\.map$
+- ^(.*/)?.*\.pyc$
 
 libraries:
 - name: ssl
