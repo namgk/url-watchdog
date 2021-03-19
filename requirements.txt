@@ -1,6 +1,6 @@
 Flask==0.11.1
 FormEncode==1.2.6
-Jinja2==2.8
+Jinja2==2.11.3
 MarkupSafe==0.23
 PAM==0.4.2
 Paste==1.7.5.1
