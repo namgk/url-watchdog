@@ -57,7 +57,7 @@ python-openid==2.2.5
 python-subunit==1.2.0
 python-xlib==0.14
 pyxdg==0.25
-reportlab==3.0
+reportlab==3.5.55
 requests==2.2.1
 scgi==1.13
 sessioninstaller==0.0.0
