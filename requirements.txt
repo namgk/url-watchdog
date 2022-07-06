@@ -29,7 +29,7 @@ dirspec==13.10
 duplicity==0.6.23
 extras==1.0.0
 fixtures==3.0.0
-html5lib==0.999
+html5lib==0.999999999
 httplib2==0.8
 itsdangerous==0.24
 linecache2==1.0.0
