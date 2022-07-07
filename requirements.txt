@@ -58,7 +58,7 @@ python-subunit==1.2.0
 python-xlib==0.14
 pyxdg==0.25
 reportlab==3.0
-requests==2.2.1
+requests==2.20.0
 scgi==1.13
 sessioninstaller==0.0.0
 simplejson==3.3.1
